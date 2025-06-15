@@ -1,4 +1,3 @@
-# ResumeGrader 📝⚡
 
 ResumeGrader is a simple, fast, and AI-powered resume evaluation tool. It allows users to upload their resumes in PDF format and instantly receive grading, analysis, and constructive feedback — all powered by cutting-edge AI.
 
