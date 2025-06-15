@@ -60,3 +60,29 @@ Built as a hackathon project, ResumeGrader combines modern backend, AI models, a
 ```bash
 git clone https://github.com/your-username/ResumeGrader.git
 cd ResumeGrader
+```
+
+### Backend (Python + FastAPI)
+```bash
+Copy
+Edit
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+### Frontend (Next.js)
+```bash
+Copy
+Edit
+cd frontend
+npm install
+npm run dev
+```
+### Environment Variables
+Create a .env file for your environment variables:
+```bash
+export SARVAM_API_KEY=your_sarvam_ai_api_key
+export STORAGE_PATH=/path/to/storage
+```
