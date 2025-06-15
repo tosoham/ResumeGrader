@@ -10,13 +10,13 @@ function App() {
 
   async function handleUpload(){
     const formData = new FormData()
-    formData.append("resume",files)
+    formData.append("file",files)
     setLoading(true)
     try{
-      const res = await axios.post(`http://localhost:3000/uploads`,formData)
+      const res = await axios.post(`http://localhost:8000/upload-resume`,formData)
     setLoading(false)
     setResponse(res.data)
-   }catch(e){
+   }catch(err){
     setResponse(err)
    }
     
@@ -28,7 +28,7 @@ function App() {
       <h1>Automated Resume Grader</h1>
       </div>
       <div>
-        <input type="file" accept='.pdf' onChange={(e)=>{setFiles(e.target.files)}}  placeholder='choose your Resume'/>
+        <input type="file" accept='.pdf' onChange={(e)=>{setFiles(e.target.files[0])}}  placeholder='choose your Resume'/>
       </div>
       <div>
         <button onClick={handleUpload} >Upload</button>
@@ -38,9 +38,9 @@ function App() {
       <div>
              {response && (
         <div>
-          <h2>Score: {response.score}/100</h2>
+          {/*<h2>Score: {response.score}/100</h2>*/}
           <ul>
-            {response.tips.map((tip, i) => <li key={i}>{tip}</li>)}
+            {response.parsed_data.personal_info.name}
           </ul>
         </div>
       )}
