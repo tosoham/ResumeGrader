@@ -1,8 +1,7 @@
 services:
   - type: web
-    name: your-app-name
+    name: resume-grader-api
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port 8000
-    runtime: python
-    pythonVersion: 3.12.3
+    runtime: python-3.11
+    plan: starter
+    buildCommand: pip install --only-binary=all -r requirements.txt
