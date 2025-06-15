@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: resume-grader-backend
+    env: docker
+    rootDir: backend/analyzer
