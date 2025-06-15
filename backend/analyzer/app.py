@@ -68,7 +68,7 @@ async def upload_resume(file: UploadFile = File(...)):
         
         parsed_data = await resume_parser.parse_resume(file_path)
         
-        # os.remove(file_path)
+        os.remove(file_path)
         
         return JSONResponse(
             status_code=200,
@@ -113,7 +113,7 @@ async def grade_resume(file: UploadFile = File(...)):
         logger.info(f"File saved for grading: {file_path}")
         grading_result = await resume_parser.grade_resume(file_path)
         
-        # os.remove(file_path)
+        os.remove(file_path)
         
         return JSONResponse(
             status_code=200,
