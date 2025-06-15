@@ -8,7 +8,6 @@ from typing import Dict, Any
 import logging
 from utils.resume_parser import ResumeParser
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,20 +17,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Create uploads directory if it doesn't exist
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Initialize resume parser
+
 resume_parser = ResumeParser()
 
 @app.get("/")
@@ -54,28 +51,23 @@ async def upload_resume(file: UploadFile = File(...)):
     Upload and parse a resume PDF file
     """
     try:
-        # Validate file type
         if not file.filename.lower().endswith('.pdf'):
             raise HTTPException(
                 status_code=400, 
                 detail="Only PDF files are supported"
             )
         
-        # Generate unique filename
         file_id = str(uuid.uuid4())
         file_path = os.path.join(UPLOAD_DIR, f"{file_id}_{file.filename}")
         
-        # Save uploaded file
         async with aiofiles.open(file_path, 'wb') as f:
             content = await file.read()
             await f.write(content)
         
         logger.info(f"File saved: {file_path}")
         
-        # Parse the resume
         parsed_data = await resume_parser.parse_resume(file_path)
         
-        # Clean up the uploaded file (optional)
         # os.remove(file_path)
         
         return JSONResponse(
@@ -91,7 +83,6 @@ async def upload_resume(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error processing resume: {str(e)}")
         
-        # Clean up file if it exists
         if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
             
@@ -106,28 +97,22 @@ async def grade_resume(file: UploadFile = File(...)):
     Upload, parse, and grade a resume PDF file
     """
     try:
-        # Validate file type
         if not file.filename.lower().endswith('.pdf'):
             raise HTTPException(
                 status_code=400, 
                 detail="Only PDF files are supported"
             )
         
-        # Generate unique filename
         file_id = str(uuid.uuid4())
         file_path = os.path.join(UPLOAD_DIR, f"{file_id}_{file.filename}")
-        
-        # Save uploaded file
+
         async with aiofiles.open(file_path, 'wb') as f:
             content = await file.read()
             await f.write(content)
         
         logger.info(f"File saved for grading: {file_path}")
-        
-        # Parse and grade the resume
         grading_result = await resume_parser.grade_resume(file_path)
         
-        # Clean up the uploaded file (optional)
         # os.remove(file_path)
         
         return JSONResponse(
@@ -142,8 +127,6 @@ async def grade_resume(file: UploadFile = File(...)):
         
     except Exception as e:
         logger.error(f"Error grading resume: {str(e)}")
-        
-        # Clean up file if it exists
         if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
             
@@ -157,8 +140,6 @@ async def get_resume_analysis(file_id: str):
     """
     Get analysis results for a previously uploaded resume
     """
-    # This would typically fetch from a database
-    # For now, return a placeholder response
     return {
         "file_id": file_id,
         "message": "Resume analysis retrieval not implemented yet"
@@ -170,7 +151,6 @@ async def delete_resume(file_id: str):
     Delete a resume file and its analysis
     """
     try:
-        # Find and delete files with this file_id
         deleted_files = []
         for filename in os.listdir(UPLOAD_DIR):
             if filename.startswith(file_id):

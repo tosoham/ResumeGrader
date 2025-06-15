@@ -27,6 +27,7 @@ class GradingResult:
     section_scores: Dict[str, float]
     strengths: List[str]
     improvements: List[str]
+    tips: List[str]
     detailed_feedback: str
 
 class ResumeParser:
@@ -68,7 +69,6 @@ class ResumeParser:
                 return await self._enhanced_fallback_parsing(prompt)
             
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Updated payload for Sarvam AI v1 API
                 payload = {
                     "model": "sarvam-m",
                     "messages": [
@@ -111,7 +111,6 @@ class ResumeParser:
         """Enhanced fallback parsing when API is not available"""
         logger.info("Using enhanced fallback parsing")
         
-        # Extract the text from the prompt
         text_start = prompt.find("Resume text:")
         if text_start != -1:
             resume_text = prompt[text_start + len("Resume text:"):].strip()
@@ -136,47 +135,38 @@ class ResumeParser:
         import re
         
         personal_info = {}
-        
-        # Extract name (usually first line or near top)
         lines = text.split('\n')
         for line in lines[:5]:
             line = line.strip()
             if line and not any(keyword in line.lower() for keyword in ['email', 'phone', 'linkedin', 'github', 'address']):
-                # Simple name detection
                 words = line.split()
                 if 2 <= len(words) <= 4 and all(word.isalpha() or word.replace('.', '').isalpha() for word in words):
                     personal_info['name'] = line
                     break
         
-        # Extract email
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         email_match = re.search(email_pattern, text)
         if email_match:
             personal_info['email'] = email_match.group()
         
-        # Extract phone
         phone_pattern = r'[\+]?[1-9]?[0-9]{7,15}'
         phone_matches = re.findall(phone_pattern, text.replace('-', '').replace(' ', ''))
         if phone_matches:
-            # Filter for likely phone numbers
             for phone in phone_matches:
                 if 10 <= len(phone) <= 15:
                     personal_info['phone'] = phone
                     break
         
-        # Extract LinkedIn
         linkedin_pattern = r'linkedin\.com/in/[\w-]+'
         linkedin_match = re.search(linkedin_pattern, text.lower())
         if linkedin_match:
             personal_info['linkedin'] = linkedin_match.group()
         
-        # Extract GitHub
         github_pattern = r'github\.com/[\w-]+'
         github_match = re.search(github_pattern, text.lower())
         if github_match:
             personal_info['github'] = github_match.group()
         
-        # Extract location (look for common location patterns)
         location_keywords = ['kolkata', 'mumbai', 'delhi', 'bangalore', 'india', 'usa', 'city', 'state']
         for line in lines:
             line_lower = line.lower()
@@ -199,19 +189,16 @@ class ResumeParser:
         for i, line in enumerate(lines):
             line = line.strip()
             
-            # Detect experience section
             if 'experience' in line.lower() and len(line) < 50:
                 in_experience_section = True
                 continue
             
-            # Stop if we hit another major section
             if in_experience_section and any(section in line.lower() for section in ['education', 'skills', 'projects', 'certifications']):
                 if current_exp:
                     experience.append(current_exp)
                 break
             
             if in_experience_section and line:
-                # Look for company names (usually standalone lines or with location)
                 if not line.startswith('◦') and not line.startswith('•') and len(line.split()) <= 8:
                     if current_exp:
                         experience.append(current_exp)
@@ -222,12 +209,10 @@ class ResumeParser:
                         'description': '',
                         'key_achievements': []
                     }
-                # Look for position and duration
                 elif '–' in line or '-' in line:
                     parts = line.split('–') if '–' in line else line.split('-')
                     if len(parts) >= 2:
                         current_exp['duration'] = line
-                # Look for achievements/descriptions
                 elif line.startswith('◦') or line.startswith('•'):
                     current_exp['key_achievements'].append(line[1:].strip())
         
@@ -257,7 +242,6 @@ class ResumeParser:
                 break
             
             if in_education_section and line:
-                # Look for institution names
                 if not line.startswith('◦') and not line.startswith('•') and 'gpa' not in line.lower():
                     if current_edu:
                         education.append(current_edu)
@@ -268,10 +252,8 @@ class ResumeParser:
                         'year': '',
                         'gpa': ''
                     }
-                # Look for degree info
                 elif 'b.tech' in line.lower() or 'bachelor' in line.lower() or 'master' in line.lower():
                     current_edu['degree'] = line
-                # Look for GPA
                 elif 'gpa' in line.lower():
                     current_edu['gpa'] = line
         
@@ -284,7 +266,6 @@ class ResumeParser:
         """Fallback skills extraction"""
         skills = []
         
-        # Common technical skills patterns
         tech_keywords = [
             'python', 'javascript', 'java', 'c++', 'react', 'node.js', 'django', 'flask',
             'html', 'css', 'sql', 'mongodb', 'postgresql', 'mysql', 'git', 'docker',
@@ -294,8 +275,6 @@ class ResumeParser:
         ]
         
         text_lower = text.lower()
-        
-        # Extract from skills section if exists
         lines = text.split('\n')
         in_skills_section = False
         
@@ -310,21 +289,18 @@ class ResumeParser:
                 break
             
             if in_skills_section:
-                # Extract skills from bullet points
                 if line.startswith('◦') or line.startswith('•'):
                     skill_line = line[1:].strip()
-                    # Split by common separators
                     for separator in [',', '•', '|', ';']:
                         skill_line = skill_line.replace(separator, ',')
                     extracted_skills = [s.strip() for s in skill_line.split(',') if s.strip()]
                     skills.extend(extracted_skills)
         
-        # Also search for tech keywords throughout the text
         for keyword in tech_keywords:
             if keyword in text_lower and keyword not in [s.lower() for s in skills]:
                 skills.append(keyword.title())
         
-        return json.dumps(list(set(skills)))  # Remove duplicates
+        return json.dumps(list(set(skills)))  
     
     def _extract_projects_fallback(self, text: str) -> str:
         """Fallback projects extraction"""
@@ -368,13 +344,11 @@ class ResumeParser:
     async def parse_resume(self, file_path: str) -> Dict[str, Any]:
         """Parse resume and extract structured information"""
         try:
-            # Extract text from PDF
             raw_text = self.extract_text_from_pdf(file_path)
             
             if not raw_text.strip():
                 raise Exception("No text content found in PDF")
             
-            # Parse different sections using Sarvam AI
             tasks = [
                 self._extract_personal_info(raw_text),
                 self._extract_experience(raw_text),
@@ -386,8 +360,7 @@ class ResumeParser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
             personal_info, experience, education, skills, projects = results
-            
-            # Handle any exceptions in the results
+
             if isinstance(personal_info, Exception):
                 personal_info = {}
             if isinstance(experience, Exception):
@@ -528,16 +501,9 @@ class ResumeParser:
     async def grade_resume(self, file_path: str) -> Dict[str, Any]:
         """Grade the resume and provide detailed feedback"""
         try:
-            # First parse the resume
             parsed_data = await self.parse_resume(file_path)
-            
-            # Calculate scores based on parsed data
             scores = self._calculate_scores(parsed_data)
-            
-            # Generate detailed feedback
             feedback = self._generate_detailed_feedback(parsed_data, scores)
-            
-            # If Sarvam API is available, try to get AI-powered feedback
             if self.sarvam_api_key:
                 try:
                     ai_feedback = await self._get_ai_feedback(parsed_data)
@@ -551,6 +517,7 @@ class ResumeParser:
                 "section_scores": scores['sections'],
                 "strengths": feedback['strengths'],
                 "improvements": feedback['improvements'],
+                "tips": feedback['tips'],
                 "detailed_feedback": feedback['detailed'],
                 "parsing_method": "enhanced_fallback" if not self.sarvam_api_key else "ai_assisted"
             }
@@ -571,8 +538,7 @@ class ResumeParser:
             'skills': 0,
             'projects': 0
         }
-        
-        # Score personal info
+
         personal = parsed_data.get('personal_info', {})
         if personal.get('name') and personal['name'] != 'Not available':
             scores['personal_info'] += 30
@@ -583,16 +549,13 @@ class ResumeParser:
         if personal.get('linkedin') or personal.get('github'):
             scores['personal_info'] += 20
         
-        # Score experience
         experience = parsed_data.get('experience', [])
         if experience:
             scores['experience'] = min(100, len(experience) * 40)
-            # Bonus for detailed experience
             for exp in experience:
                 if exp.get('key_achievements') and len(exp['key_achievements']) > 0:
                     scores['experience'] = min(100, scores['experience'] + 10)
         
-        # Score education
         education = parsed_data.get('education', [])
         if education:
             scores['education'] = min(100, len(education) * 50)
@@ -600,17 +563,14 @@ class ResumeParser:
                 if edu.get('gpa'):
                     scores['education'] = min(100, scores['education'] + 15)
         
-        # Score skills
         skills = parsed_data.get('skills', [])
         if skills:
             scores['skills'] = min(100, len(skills) * 10)
         
-        # Score projects
         projects = parsed_data.get('projects', [])
         if projects:
             scores['projects'] = min(100, len(projects) * 33)
         
-        # Calculate overall score
         overall = sum(scores.values()) / len(scores)
         
         return {
@@ -623,8 +583,8 @@ class ResumeParser:
         strengths = []
         improvements = []
         detailed_feedback = []
+        tips = []
         
-        # Analyze personal info
         personal = parsed_data.get('personal_info', {})
         if personal.get('name') and personal['name'] != 'Not available':
             strengths.append(f"Clear identification with name: {personal['name']}")
@@ -632,56 +592,126 @@ class ResumeParser:
             strengths.append("Professional contact information provided")
         if not personal.get('email') or personal.get('email') == 'Not available':
             improvements.append("Add professional email address")
+            tips.append("Use a professional email format like firstname.lastname@domain.com instead of casual handles")
         if not personal.get('phone') or personal.get('phone') == 'Not available':
             improvements.append("Include phone number for contact")
+            tips.append("Add your phone number in a consistent format (e.g., +91-XXXXX-XXXXX for Indian numbers)")
+        if not personal.get('linkedin'):
+            tips.append("Add your LinkedIn profile URL to increase professional visibility")
+        if not personal.get('github') and len(parsed_data.get('skills', [])) > 0:
+            tips.append("Include your GitHub profile to showcase coding projects and contributions")
         
-        # Analyze experience
         experience = parsed_data.get('experience', [])
         if experience:
             strengths.append(f"Has {len(experience)} work experience entries")
             detailed_feedback.append(f"Experience section shows {len(experience)} positions, demonstrating career progression.")
+            has_quantified = False
+            for exp in experience:
+                achievements = exp.get('key_achievements', [])
+                for achievement in achievements:
+                    if any(char.isdigit() for char in str(achievement)):
+                        has_quantified = True
+                        break
+                if has_quantified:
+                    break
+            
+            if has_quantified:
+                strengths.append("Experience includes quantified achievements")
+            else:
+                tips.append("Quantify your achievements with numbers, percentages, or specific outcomes (e.g., 'Increased efficiency by 30%' instead of 'Improved efficiency')")
+            short_descriptions = 0
+            for exp in experience:
+                achievements = exp.get('key_achievements', [])
+                if len(achievements) < 2:
+                    short_descriptions += 1
+            
+            if short_descriptions > 0:
+                tips.append("Add 2-3 bullet points for each role highlighting key responsibilities and achievements")
         else:
             improvements.append("Add work experience or internships to strengthen profile")
+            tips.append("Include internships, part-time jobs, freelance work, or volunteer positions to show practical experience")
         
-        # Analyze education
         education = parsed_data.get('education', [])
         if education:
             strengths.append("Educational background clearly presented")
+            has_gpa = False
             for edu in education:
                 if 'gpa' in str(edu).lower():
                     strengths.append("Academic performance (GPA) included")
+                    has_gpa = True
+                    break
+            
+            if not has_gpa:
+                tips.append("Consider adding GPA if it's 3.5 or above, or relevant coursework if applicable")
         else:
             improvements.append("Include educational qualifications")
+            tips.append("Add your degree, institution, graduation year, and relevant coursework or academic achievements")
         
-        # Analyze skills
         skills = parsed_data.get('skills', [])
-        if len(skills) > 5:
+        if len(skills) > 10:
             strengths.append(f"Comprehensive skills list with {len(skills)} technical skills")
+            tips.append("Consider grouping skills by category (e.g., Programming Languages, Frameworks, Tools) for better organization")
+        elif len(skills) > 5:
+            strengths.append(f"Good technical skills coverage with {len(skills)} skills listed")
         elif len(skills) > 0:
             improvements.append("Expand technical skills section with more relevant technologies")
+            tips.append("Add more skills relevant to your target role - include programming languages, frameworks, tools, and soft skills")
         else:
             improvements.append("Add technical skills relevant to your field")
+            tips.append("Create a skills section with technical abilities like programming languages, software tools, and relevant certifications")
         
-        # Analyze projects
+        soft_skill_keywords = ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical']
+        has_soft_skills = any(skill.lower() in soft_skill_keywords for skill in skills)
+        if not has_soft_skills:
+            tips.append("Consider adding soft skills like leadership, communication, or problem-solving alongside technical skills")
+        
+        
         projects = parsed_data.get('projects', [])
         if projects:
             strengths.append(f"Showcases {len(projects)} projects demonstrating practical experience")
+            
+            
+            projects_with_tech = sum(1 for p in projects if p.get('technologies'))
+            projects_with_urls = sum(1 for p in projects if p.get('url'))
+            
+            if projects_with_tech < len(projects):
+                tips.append("Add technology stack details for each project to highlight technical expertise")
+            
+            if projects_with_urls == 0:
+                tips.append("Include GitHub links or live demo URLs for your projects to allow recruiters to see your work")
+            
+            if len(projects) < 3:
+                tips.append("Consider adding 2-3 significant projects that showcase different skills and technologies")
         else:
             improvements.append("Add personal or academic projects to demonstrate practical skills")
+            tips.append("Create 2-3 projects showcasing your skills - include project name, description, technologies used, and GitHub/demo links")
         
-        # Overall feedback
+    
         overall_score = scores['overall']
         if overall_score >= 80:
             detailed_feedback.append("Excellent resume with comprehensive information across all sections.")
+            tips.append("Fine-tune formatting and ensure consistent styling throughout the document")
         elif overall_score >= 60:
             detailed_feedback.append("Good resume foundation with room for enhancement in specific areas.")
+            tips.append("Focus on adding more specific details and quantified achievements to stand out")
         else:
             detailed_feedback.append("Resume needs significant improvement in multiple sections.")
+            tips.append("Start by ensuring all basic sections (contact info, experience, education, skills) are complete and well-detailed")
+        
+        if len(tips) < 3:
+            tips.extend([
+                "Use action verbs to start bullet points (e.g., 'Developed', 'Implemented', 'Managed')",
+                "Keep your resume to 1-2 pages and use consistent formatting throughout",
+                "Tailor your resume for each job application by highlighting relevant skills and experience"
+            ])
+        
+        tips = tips[:8] 
         
         return {
             'strengths': strengths,
             'improvements': improvements,
-            'detailed': ' '.join(detailed_feedback)
+            'detailed': ' '.join(detailed_feedback),
+            'tips': tips
         }
     
     async def _get_ai_feedback(self, parsed_data: Dict) -> str:
@@ -703,3 +733,4 @@ class ResumeParser:
         except Exception as e:
             logger.error(f"AI feedback generation failed: {e}")
             return "AI feedback not available"
+        
