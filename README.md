@@ -1,3 +1,4 @@
+# ResumeGrader
 
 ResumeGrader is a simple, fast, and AI-powered resume evaluation tool. It allows users to upload their resumes in PDF format and instantly receive grading, analysis, and constructive feedback — all powered by cutting-edge AI.
 
@@ -63,8 +64,6 @@ cd ResumeGrader
 
 ### Backend (Python + FastAPI)
 ```bash
-Copy
-Edit
 cd backend
 python -m venv venv
 source venv/bin/activate
@@ -73,8 +72,6 @@ uvicorn main:app --reload
 ```
 ### Frontend (Next.js)
 ```bash
-Copy
-Edit
 cd frontend
 npm install
 npm run dev
