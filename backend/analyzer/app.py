@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 origins = [
-    "https:/resume-grader-v51v-pi.vercel.app/",  # production
+    "https://resume-grader-v51v-pi.vercel.app",  # production
     "http://localhost:5173",             # Vite dev server
 ]
 
