@@ -11,6 +11,11 @@ from utils.resume_parser import ResumeParser
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+origins = [
+    "https://resume-grader-v51v.vercel.app/",  # production
+    "http://localhost:5173",             # Vite dev server
+]
+
 app = FastAPI(
     title="Resume Grader API",
     description="A FastAPI backend for parsing and grading resumes using Sarvam AI",
@@ -19,7 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=origins,  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

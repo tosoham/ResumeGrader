@@ -3,6 +3,8 @@ import {Spinner} from "./component/Spinner"
 import './App.css'
 import axios from "axios"
 
+url = `${import.meta.env.VITE_API_URL}` || `http://localhost:8000`;
+
 function App() {
   const [files, setFiles] = useState(null)
   const [response,setResponse] = useState(null)
@@ -13,7 +15,7 @@ function App() {
     formData.append("file",files)
     setLoading(true)
     try{
-      const res = await axios.post(`http://localhost:8000/grade-resume`,formData)
+      const res = await axios.post(`${url}/grade-resume`,formData)
       setLoading(false)
       setResponse(res.data)
     }catch(err){
